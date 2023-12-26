@@ -1,49 +1,95 @@
-var map = L.map("map").setView([51.505, -0.09], 13); // Replace with your desired initial coordinates and zoom level
-var pos = L.GeoIP.getPosition();
-L.GeoIP.centerMapOnPosition(map);
-L.GeoIP.centerMapOnPosition(map, 15);
 var ip = "13.15.13.15";
-var zoom = 15;
-var pos = L.GeoIP.getPosition(ip);
-L.GeoIP.centerMapOnPosition(map, zoom, ip);
+function showImageOfMap(result) {
+    console.log("watafak", result);
+    mapboxgl.accessToken =
+        "pk.eyJ1IjoiaGFtemEzMjQ1IiwiYSI6ImNsbjh6YnNpNTAwY3MycWw1cHYwNXo1N24ifQ.ffBExfXWXnWCoEWIqJzgEg";
+    const map = new mapboxgl.Map({
+        container: "map",
+        // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [12.550343, 55.665957],
+        zoom: 8,
+    });
 
-// let listOfLatencies = [];
-// let usersHostValue = document.querySelector(".usersHostValue");
-// document
-//     .getElementById("measureLatencyBtn")
-//     .addEventListener("click", function () {
-//         let curTime = new Date();
+    console.log("IMPORTANT LOG");
+    for (let i = 0; i < result.length; i++) {
+        console.log(result);
+        console.log(result[i]);
+        if (result[i].lat) {
+            console.log("JAJa");
+            let marker = new mapboxgl.Marker({ color: "black", rotation: 45 })
+                .setLngLat([result[i].lat, result[i].long])
+                .addTo(map);
+        }
+    }
 
-//         let options = {
-//             hour: "2-digit",
-//             minute: "2-digit",
-//             second: "2-digit",
-//             hour12: false,
-//         };
+    // Create a default Marker and add it to the map.
 
-//         const hostURL = document.querySelector(".usersHostValue").value;
+    // Create a default Marker, colored black, rotated 45 degrees.
+    const marker2 = new mapboxgl.Marker({ color: "black", rotation: 45 })
+        .setLngLat([12.65147, 55.608166])
+        .addTo(map);
+}
+function showWayOnMap(result) {
+    console.log("Called", result);
 
-//         let formattedTime = curTime.toLocaleTimeString("en-US", options);
+    const fetchPromises = result.map((item) =>
+        fetch(
+            `http://api.ipstack.com/${item.ip}?access_key=c4ae05aae3ca08ca484e26f85d2da9b7`
+        ).then((response) => response.json())
+    );
+    let arrayOfLocations = [];
 
-//         console.log(formattedTime, usersHostValue);
+    Promise.all(fetchPromises)
+        .then((responses) => {
+            for (let i = 0; i < responses.length; i++) {
+                let obj = {
+                    lat: responses[i].latitude,
+                    long: responses[i].longitude,
+                };
+                arrayOfLocations.push(obj);
+            }
 
-//         // Replace "https://example.com" with the desired host URL
+            console.log("array of location", arrayOfLocations);
+            showImageOfMap(arrayOfLocations);
+        })
+        .catch((error) => {
+            console.error("Error fetching data:", error);
+        });
+}
 
-//         // Make an AJAX request to the specified host
-//         fetch(`/ping?url=${encodeURIComponent(hostURL)}`)
-//             .then((response) => response.json())
-//             .then((result) => {
-//                 console.log("RESULT!!!", result);
-//                 const latencyResultElement =
-//                     document.getElementById("latencyResult");
+let listOfLatencies = [];
+let usersHostValue = document.querySelector(".usersHostValue");
+document
+    .getElementById("measureLatencyBtn")
+    .addEventListener("click", function () {
+        let curTime = new Date();
 
-//                 if (result.alive) {
-//                     latencyResultElement.textContent = `Host is reachable. Latency: ${result.resultLatency.time} ms`;
-//                 } else {
-//                     latencyResultElement.textContent = "Host is not reachable";
-//                 }
-//             })
-//             .catch((error) => {
-//                 console.error(`Error fetching latency data: ${error.message}`);
-//             });
-//     });
+        let options = {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+        };
+
+        const hostURL = document.querySelector(".usersHostValue").value;
+        let formattedTime = curTime.toLocaleTimeString("en-US", options);
+
+        fetch(`/ping?url=${encodeURIComponent(hostURL)}`)
+            .then((response) => response.json())
+            .then((result) => {
+                console.log("coused");
+                const latencyResultElement =
+                    document.getElementById("latencyResult");
+
+                if (result.resultLatency.alive) {
+                    latencyResultElement.textContent = `Host is reachable. Latency: ${result.resultLatency.time} ms`;
+                    showWayOnMap(result.list);
+                } else {
+                    latencyResultElement.textContent = "Host is not reachable";
+                }
+            })
+            .catch((error) => {
+                console.error(`Error fetching latency data: ${error.message}`);
+            });
+    });
