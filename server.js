@@ -45,11 +45,20 @@ app.get("/ping", async (req, res) => {
     };
 
     try {
-        const list = await getListOfHops(host);
         const resultLatency = await ping.promise.probe(host, options);
-        res.json({ list, resultLatency });
+        res.json(resultLatency);
     } catch (error) {
         res.status(500).json({ error: "Error during traceroute" });
+    }
+});
+app.get("/traceroute", async (req, res) => {
+    const host = req.query.url;
+    console.log(host);
+    try {
+        const hops = await getListOfHops(host);
+        res.json(hops);
+    } catch (error) {
+        res.status(500).json({ errog: "error" });
     }
 });
 
