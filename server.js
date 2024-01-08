@@ -41,7 +41,7 @@ app.get("/ping", async (req, res) => {
     const host = req.query.url || "www.novipazar.com";
     console.log("host:", host);
     const options = {
-        timeout: 10, // Timeout in seconds
+        timeout: 20, // Timeout in seconds
     };
 
     try {

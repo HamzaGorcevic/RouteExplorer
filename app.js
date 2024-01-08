@@ -3,19 +3,53 @@ mapboxgl.accessToken =
 const map = new mapboxgl.Map({
     container: "map",
     style: "mapbox://styles/mapbox/streets-v12",
-    zoom: 8,
+    zoom: 2,
+    center: [43.158157, 20.346822], // Center the map on the starting point
 });
 
 function showImageOfMap(result) {
     console.log("watafak", result);
 
     // Split the location string into latitude and longitude
-    if (result.loc) {
-        const [lat, lon] = result.loc.split(",");
-        console.log("lon:", lat, lon);
-        let marker = new mapboxgl.Marker({ color: "black", rotation: 45 })
-            .setLngLat([lon, lat])
-            .addTo(map);
+    let coordinates = [];
+
+    for (let i = 0; i < result.length; i++) {
+        if (result[i].loc) {
+            const [lat, lon] = result[i].loc.split(",");
+            let temp = [lon, lat];
+            coordinates.push(temp);
+
+            let marker = new mapboxgl.Marker({ color: "black", rotation: 45 })
+                .setLngLat([lon, lat])
+                .addTo(map);
+        }
+    }
+
+    // Check if there are at least two coordinates to create a line
+    if (coordinates.length >= 2) {
+        console.log("coord", coordinates);
+        const geojson = {
+            type: "Feature",
+            properties: {},
+            geometry: {
+                type: "LineString",
+                coordinates: coordinates,
+            },
+        };
+
+        // Add the line to the map outside the loop
+        map.addLayer({
+            id: "line",
+            type: "line",
+            source: {
+                type: "geojson",
+                data: geojson,
+            },
+            paint: {
+                "line-color": "#86A7FC",
+                "line-width": 10,
+            },
+        });
     }
 }
 
@@ -32,7 +66,7 @@ async function showWayOnMap(result) {
             )
         );
 
-        responses.forEach((response) => showImageOfMap(response));
+        showImageOfMap(responses);
     } catch (error) {
         console.error("Error fetching IP information:", error);
     }
